@@ -103,6 +103,7 @@ class FlutterBlePeripheralPlugin : FlutterPlugin, MethodChannel.MethodCallHandle
         }
 
         when (call.method) {
+            "changeAdvertiseData" -> changeAdvertiseData(call, result)
             "start" -> startPeripheral(call, result)
             "stop" -> stopPeripheral(result)
             "isSupported" -> isSupported(result, context!!)
@@ -143,7 +144,31 @@ class FlutterBlePeripheralPlugin : FlutterPlugin, MethodChannel.MethodCallHandle
             result.error("No activity", "FlutterBlePeripheral is not correctly initialized", "null")
         }
     }
+    private fun changeAdvertiseData(call: MethodCall, result: MethodChannel.Result) {
+        if (call.arguments !is Map<*, *>) {
+            throw IllegalArgumentException("Arguments are not a map! " + call.arguments)
+        }
 
+        val arguments = call.arguments as Map<*, *>
+
+        // First build main advertise data.
+        val advertiseData: AdvertiseData.Builder = AdvertiseData.Builder()
+        // (arguments["manufacturerData"] as ArrayList<*>?)?.let { list -> advertiseData.addManufacturerData((arguments["manufacturerId"] as Int), list.map { (it as Int).toByte() }.toByteArray()) }
+        (arguments["manufacturerData"] as ByteArray?)?.let { advertiseData.addManufacturerData((arguments["manufacturerId"] as Int), it) }
+        (arguments["serviceData"] as ByteArray?)?.let { advertiseData.addServiceData(ParcelUuid(UUID.fromString(arguments["serviceDataUuid"] as String)), it) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            (arguments["serviceSolicitationUuid"] as String?)?.let { advertiseData.addServiceSolicitationUuid(
+                    ParcelUuid(UUID.fromString(it))) }
+
+        (arguments["serviceUuid"] as String?)?.let { advertiseData.addServiceUuid(ParcelUuid(UUID.fromString(it))) }
+        //TODO: addTransportDiscoveryData
+        (arguments["includeDeviceName"] as Boolean?)?.let { advertiseData.setIncludeDeviceName(it) }
+        (arguments["transmissionPowerIncluded"] as Boolean?)?.let {
+            advertiseData.setIncludeTxPowerLevel(it)
+        }
+
+        advertisingSetCallback?.changeAdvertisingData(advertiseData.build())
+    }
     private fun startPeripheral(call: MethodCall, result: MethodChannel.Result) {
 
         if (call.arguments !is Map<*, *>) {

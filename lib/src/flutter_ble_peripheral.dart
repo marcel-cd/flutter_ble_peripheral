@@ -50,7 +50,21 @@ class FlutterBlePeripheral {
   //TODO Event Channel used to received data
   // final EventChannel _dataReceivedEventChannel = const EventChannel(
   //     'dev.steenbakker.flutter_ble_peripheral/ble_data_received');
-
+  /// change the data of an ongoing advertisement
+  Future<void> changeAdvertiseData(AdvertiseData advertiseData) async {
+    final Map<String, dynamic> parameters = {
+      'serviceUuid': advertiseData.serviceUuid,
+      'manufacturerId': advertiseData.manufacturerId,
+      'manufacturerData': advertiseData.manufacturerData,
+      'serviceDataUuid': advertiseData.serviceDataUuid,
+      'serviceData': advertiseData.serviceData,
+      'includeDeviceName': advertiseData.includeDeviceName,
+      'localName': advertiseData.localName,
+      'transmissionPowerIncluded': advertiseData.includePowerLevel,
+      'serviceSolicitationUuid': advertiseData.serviceSolicitationUuid,
+    };
+    return _methodChannel.invokeMethod('changeAdvertiseData', parameters);
+  }
   /// Start advertising. Takes [AdvertiseData] as an input.
   Future<BluetoothPeripheralState> start({
     required AdvertiseData advertiseData,

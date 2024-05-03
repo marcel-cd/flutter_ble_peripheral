@@ -1,5 +1,6 @@
 package dev.steenbakker.flutter_ble_peripheral.callbacks
 
+import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.BluetoothLeAdvertiser
@@ -22,6 +23,7 @@ class PeripheralAdvertisingSetCallback(private val result: MethodChannel.Result,
      * @param txPower tx power that will be used for this set.
      * @param status Status of the operation.
      */
+    private var currentAdvertisingSet: AdvertisingSet? = null
 
     override fun onAdvertisingSetStarted(
             advertisingSet: AdvertisingSet?,
@@ -34,6 +36,7 @@ class PeripheralAdvertisingSetCallback(private val result: MethodChannel.Result,
         when (status) {
             ADVERTISE_SUCCESS -> {
                 result.success(txPower)
+                currentAdvertisingSet = advertisingSet
                 stateChangedHandler.publishPeripheralState(PeripheralState.advertising)
             }
             ADVERTISE_FAILED_ALREADY_STARTED -> {
@@ -68,6 +71,14 @@ class PeripheralAdvertisingSetCallback(private val result: MethodChannel.Result,
 
     }
 
+    fun changeAdvertisingData(advertiseData: AdvertiseData) {
+        try {
+            Log.d("FlutterBlePeripheral", "changeAdvertisingData: message: $advertiseData")
+            this.currentAdvertisingSet?.setAdvertisingData(advertiseData)
+        } catch (e: SecurityException) {
+            Log.w("FlutterBlePeripheral", "initAdvertiser: ", e)
+        }
+    }
     /**
      * Callback triggered in response to [BluetoothLeAdvertiser.stopAdvertisingSet]
      * indicating advertising set is stopped.
